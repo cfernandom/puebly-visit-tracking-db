@@ -24,7 +24,7 @@ CREATE TABLE user_visits (
 
 -- CREATE TABLE user_visits_2020_01 PARTITION OF user_visits FOR VALUES FROM ('2020-01-01') TO ('2020-02-01');
 
-SELECT create_hypertable('user_visits', 'time', if_not_exists => TRUE);
+SELECT create_hypertable('user_visits', by_range('time', INTERVAL '1 day'), if_not_exists => TRUE);
 
 CREATE TABLE user_conversions (
     time TIMESTAMPTZ NOT NULL,
@@ -38,7 +38,8 @@ CREATE TABLE user_conversions (
 
 -- CREATE TABLE user_conversions_2020_01 PARTITION OF user_conversions FOR VALUES FROM ('2020-01-01') TO ('2020-02-01');
 
-SELECT create_hypertable('user_conversions', 'time', if_not_exists => TRUE);
+SELECT create_hypertable('user_conversions', by_range('time', INTERVAL '1 day'), if_not_exists => TRUE);
+
 
 -- INDEXES
 CREATE INDEX idx_user_visits_time ON user_visits(time);
@@ -83,4 +84,4 @@ EXECUTE PROCEDURE notify_user_conversions();
 -- SELECT add_retention_policy('user_conversions', INTERVAL '12 months');
 
 -- Compression policies
-SELECT add_compression_policy('user_visits', INTERVAL '30 days');
+-- SELECT add_compression_policy('user_visits', INTERVAL '30 days');
