@@ -17,5 +17,14 @@ services:
         source: ./.docker/timescaledb/init-db.sql
         target: /docker-entrypoint-initdb.d/init-db.sql
         read_only: true
+
+  psql-client:
+    image: postgres:latest
+    depends_on:
+      - timescaledb
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+    env_file:
+      - .env
 volumes:
   timescale_data:
