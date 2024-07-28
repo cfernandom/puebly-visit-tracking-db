@@ -9,11 +9,11 @@ CREATE TABLE users (
 
 CREATE TABLE posts (
     id INTEGER NOT NULL,
-    -- title VARCHAR(255) NOT NULL,
+    title VARCHAR(255),
     PRIMARY KEY (id)
 );
 
-CREATE TABLE user_visits (
+CREATE TABLE post_user_visits (
     time TIMESTAMPTZ NOT NULL,
     user_id UUID NOT NULL,
     post_id INTEGER NOT NULL,
@@ -22,11 +22,11 @@ CREATE TABLE user_visits (
     FOREIGN KEY (post_id) REFERENCES posts(id)
 );
 
--- CREATE TABLE user_visits_2020_01 PARTITION OF user_visits FOR VALUES FROM ('2020-01-01') TO ('2020-02-01');
+-- CREATE TABLE post_user_visits_2020_01 PARTITION OF post_user_visits FOR VALUES FROM ('2020-01-01') TO ('2020-02-01');
 
-SELECT create_hypertable('user_visits', by_range('time', INTERVAL '1 day'), if_not_exists => TRUE);
+SELECT create_hypertable('post_user_visits', by_range('time', INTERVAL '1 day'), if_not_exists => TRUE);
 
-CREATE TABLE user_conversions (
+CREATE TABLE post_user_interactions (
     time TIMESTAMPTZ NOT NULL,
     user_id UUID NOT NULL,
     post_id INTEGER NOT NULL,
@@ -36,52 +36,52 @@ CREATE TABLE user_conversions (
     FOREIGN KEY (post_id) REFERENCES posts(id)
 );
 
--- CREATE TABLE user_conversions_2020_01 PARTITION OF user_conversions FOR VALUES FROM ('2020-01-01') TO ('2020-02-01');
+-- CREATE TABLE post_user_interactions_2020_01 PARTITION OF post_user_interactions FOR VALUES FROM ('2020-01-01') TO ('2020-02-01');
 
-SELECT create_hypertable('user_conversions', by_range('time', INTERVAL '1 day'), if_not_exists => TRUE);
+SELECT create_hypertable('post_user_interactions', by_range('time', INTERVAL '1 day'), if_not_exists => TRUE);
 
 
 -- INDEXES
-CREATE INDEX idx_user_visits_time ON user_visits(time);
-CREATE INDEX idx_user_visits_post_id ON user_visits(post_id);
-CREATE INDEX idx_user_visits_time_post_id ON user_visits(time, post_id);
+CREATE INDEX idx_post_user_visits_time ON post_user_visits(time);
+CREATE INDEX idx_post_user_visits_post_id ON post_user_visits(post_id);
+CREATE INDEX idx_post_user_visits_time_post_id ON post_user_visits(time, post_id);
 
 -- FUNCTIONS
-CREATE OR REPLACE FUNCTION notify_user_visits() 
+CREATE OR REPLACE FUNCTION notify_post_user_visits() 
 RETURNS TRIGGER AS $$
 BEGIN
-    PERFORM pg_notify('user_visits', row_to_json(NEW)::text);
+    PERFORM pg_notify('post_user_visits_channel', row_to_json(NEW)::text);
     RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION notify_user_conversions() 
+CREATE OR REPLACE FUNCTION notify_post_user_interactions() 
 RETURNS TRIGGER AS $$
 BEGIN
-    PERFORM pg_notify('user_conversions', row_to_json(NEW)::text);
+    PERFORM pg_notify('post_user_interactions_channel', row_to_json(NEW)::text);
     RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
 
 -- TRIGGERS
 CREATE TRIGGER
-    notify_user_visits_trigger
+    notify_post_user_visits_trigger
     AFTER INSERT
-    ON user_visits
+    ON post_user_visits
     FOR EACH ROW
-EXECUTE PROCEDURE notify_user_visits();
+EXECUTE PROCEDURE notify_post_user_visits();
 
 CREATE TRIGGER
-    notify_user_conversions_trigger
+    notify_post_user_interactions_trigger
     AFTER INSERT
-    ON user_conversions
+    ON post_user_interactions
     FOR EACH ROW
-EXECUTE PROCEDURE notify_user_conversions();
+EXECUTE PROCEDURE notify_post_user_interactions();
 
 -- Automatically managed partitioning
 
--- SELECT add_retention_policy('user_visits', INTERVAL '12 months');
--- SELECT add_retention_policy('user_conversions', INTERVAL '12 months');
+-- SELECT add_retention_policy('post_user_visits', INTERVAL '12 months');
+-- SELECT add_retention_policy('post_user_interactions', INTERVAL '12 months');
 
 -- Compression policies
--- SELECT add_compression_policy('user_visits', INTERVAL '30 days');
+-- SELECT add_compression_policy('post_user_visits', INTERVAL '30 days');
