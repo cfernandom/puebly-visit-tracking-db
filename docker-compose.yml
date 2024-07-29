@@ -13,10 +13,15 @@ services:
       - .env
     volumes:
       - timescale_data:/var/lib/postgresql/data
+      - ./logs:/var/log/postgresql
+      - ./.docker/timescaledb/conf/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./.docker/timescaledb/conf/pg_hba.conf:/etc/postgresql/pg_hba.conf
       - type: bind
         source: ./.docker/timescaledb/init-db.sql
         target: /docker-entrypoint-initdb.d/init-db.sql
         read_only: true
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    restart: unless-stopped
 
   psql-client:
     image: postgres:latest
@@ -27,4 +32,6 @@ services:
     env_file:
       - .env
 volumes:
+  logs:
+    driver: local
   timescale_data:
