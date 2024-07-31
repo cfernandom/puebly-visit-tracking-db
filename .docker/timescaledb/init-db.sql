@@ -42,9 +42,6 @@ SELECT create_hypertable('post_user_interactions', by_range('time', INTERVAL '1 
 
 
 -- INDEXES
-CREATE INDEX idx_post_user_visits_time ON post_user_visits(time);
-CREATE INDEX idx_post_user_visits_post_id ON post_user_visits(post_id);
-CREATE INDEX idx_post_user_visits_time_post_id ON post_user_visits(time, post_id);
 
 -- FUNCTIONS
 CREATE OR REPLACE FUNCTION notify_post_user_visits() 
